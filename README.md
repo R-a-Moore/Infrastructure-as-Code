@@ -19,6 +19,6 @@ Deploy stable test, development or production environments rapidly at scale;
 
 ## what tools are available in the industry
 
-[IaC with Ansible](https://github.com/R-a-Moore/Infrastructue-as-Code/tree/main/Ansible)
+[IaC with Ansible](https://github.com/R-a-Moore/Infrastructure-as-Code/tree/main/Ansible)
 
-IaC with Terraform
+[IaC with Terraform](https://github.com/R-a-Moore/Infrastructure-as-Code/tree/main/Terraform)
