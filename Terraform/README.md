@@ -30,6 +30,10 @@ Hashicorp - open source
 #### Integrate with Existing Workflows
 Such as existing CI/CD deployments
 
+## Terraform vs Ansible
+
+main.tf is not reusable compared to an ansible playbook, therefor no very scalable either
+
 ### Chocolatey
 
 Chocolatey is software management automation for Windows wrapping necessary resources into compiled packages. This is what we will be using to download Terraform on Windows.
@@ -109,8 +113,7 @@ resource "aws_instance" "app_instance" {
     }
 
 # find out how to attach your file.pem
-    key_name = "eng122_christian_pair"
-    public_key = "MY SSH .PUB KEY"
+    key_name = "KEY_NAME(don't add the .pem extension)"
 }
 ```
 
@@ -124,4 +127,20 @@ then `terraform init` in the directory that you've made the 'main.tf' file
  REMEMBER!: Don't forget to type `yes` in the commandline, when prompted (typically with Terraform plan & terraform apply).
 
  So by doing this, we've codified, automated the launching of services on AWS, thanks to Terraform.
+
+ # VPCs with Terraform
+
+ [Great Documentation Explaining It All](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc)
+
+ ### creating a VPC
+
+ ```
+ # Creating VPC here
+resource "aws_vpc" "Main" {               
+cidr_block = var.main_vpc_cidr     # Defining the CIDR block use 10.0.0.0/24 for demo
+   instance_tenancy = "default"
+ }
+ ```
+
+
 
