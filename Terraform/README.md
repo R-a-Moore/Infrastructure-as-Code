@@ -104,18 +104,26 @@ resource "aws_instance" "app_instance" {
 # instance type
     instance_type = "t2.micro"
 
+# instance subnet
+    subnet_id = aws_subnet.public-subnet-1.id
+
 # do we need it to have public ip [we do]
     associate_public_ip_address = true
+
+# security group
+    #vpc_security_group_ids = aws_security_group.allow-ssh.id
 
 # how to name your instance
     tags = {
         Name = "eng122_christian_terraform_app"
     }
 
-# find out how to attach your file.pem
-    key_name = "KEY_NAME(don't add the .pem extension)"
+    # find out how to attach your file.pem
+    key_name = "eng122_christian_terraform"
 }
 ```
+
+(`NOTE!` Please note that the lines defining the subnet and security groups will not work unless you have a vpc.tf file making a vpc and defining each thing respectively. So if you don't have this, feel free to take those lines out of the above code when coppying.)
 
 then `terraform init` in the directory that you've made the 'main.tf' file
 
@@ -134,13 +142,87 @@ then `terraform init` in the directory that you've made the 'main.tf' file
 
  ### creating a VPC
 
+
+#### vpc.tf
  ```
- # Creating VPC here
-resource "aws_vpc" "Main" {               
-cidr_block = var.main_vpc_cidr     # Defining the CIDR block use 10.0.0.0/24 for demo
-   instance_tenancy = "default"
- }
+
+# create a vpc
+resource "aws_vpc" "vpc" {
+    # CIDR block
+    cidr_block = "${var.vpc-cidr}"
+    instance_tenancy = "default"
+    enable_dns_hostnames = true
+
+
+    tags = {
+      Name = "eng122_christian_terraform_vpc"
+    }
+}
+
+
+
+# internet gateway
+resource "aws_internet_gateway" "internet-gateway" {
+    vpc_id = aws_vpc.vpc.id
+
+    tags = {
+        Name = "eng122_christian_terraform_ig"
+    }
+}
+
+# public subnet
+resource "aws_subnet" "public-subnet-1" {
+    vpc_id = aws_vpc.vpc.id
+    cidr_block = "${var.public-subnet-1-cidr}"
+    availability_zone = "eu-west-1a"
+    map_public_ip_on_launch = true
+
+    tags = {
+      Name = "eng122_christian_terraform_public_subnet_1"
+    }
+}
+
+# route table
+resource "aws_route_table" "public-route-table" {
+    vpc_id = aws_vpc.vpc.id 
+
+    tags = {
+      Name = "eng122_christian_terraform_public_rt"
+    }
+  
+}
+
+# routing for route table
+resource "aws_route" "default_route" {
+    route_table_id = aws_route_table.public-route-table.id
+    destination_cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.internet-gateway.id
+}
+
+# link the route table and the subnet together
+resource "aws_route_table_association" "public-subnet-1-route-table-association" {
+    subnet_id = aws_subnet.public-subnet-1.id
+    route_table_id = aws_route_table.public-route-table.id
+}
  ```
+
+ #### variable.tf
+
+ ````
+ variable "vpc-cidr" {
+    # cidr block
+    default = "10.0.0.0/16"
+    description = "VPC CIDR block"
+    type = string
+}
+
+variable "public-subnet-1-cidr" {
+    # public subnet's cidr
+    default = "10.0.4.0/24"
+    description = "public subnet 1 CIDR block"
+    type = string
+}
+````
 
 
 
