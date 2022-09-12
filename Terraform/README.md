@@ -12,9 +12,6 @@ Hashicorp - open source
 
 #### Build
 
-
-
-
 #### Standardize
 
 #### Innovate
@@ -87,7 +84,7 @@ provider "aws" {
 
 # within the cloud which part of the world
 # we cant to use eu-west-1
-    region = "eu-west-1"
+    region = "eu-west-1" # "${var.instance_region}"
 }
 
 # init and download required packages
@@ -99,10 +96,10 @@ provider "aws" {
 resource "aws_instance" "app_instance" {
 
 # using which ami
-    ami = "ami-0b47105e3d7fc023e" # ubuntu 18.04
+    ami =  "ami-0b47105e3d7fc023e" #"${var.ami_to_use_id}" # ubuntu 18.04
 
 # instance type
-    instance_type = "t2.micro"
+    instance_type = "t2.micro" # "${var.type_used}"
 
 # instance subnet
     subnet_id = aws_subnet.public-subnet-1.id
@@ -111,11 +108,11 @@ resource "aws_instance" "app_instance" {
     associate_public_ip_address = true
 
 # security group
-    #vpc_security_group_ids = aws_security_group.allow-ssh.id
+    vpc_security_group_ids = [aws_security_group.sec_group_app.id] # the [] makes the terraform wait, so no errors occur when it tries to access the sec group ip and it's not been made yet
 
 # how to name your instance
     tags = {
-        Name = "eng122_christian_terraform_app"
+        Name = "eng122_christian_controller" # "${var.instance_name}"
     }
 
     # find out how to attach your file.pem
@@ -144,6 +141,7 @@ then `terraform init` in the directory that you've made the 'main.tf' file
 
 
 #### vpc.tf
+
  ```
 
 # create a vpc
@@ -159,12 +157,9 @@ resource "aws_vpc" "vpc" {
     }
 }
 
-
-
 # internet gateway
 resource "aws_internet_gateway" "internet-gateway" {
     vpc_id = aws_vpc.vpc.id
-
     tags = {
         Name = "eng122_christian_terraform_ig"
     }
@@ -174,7 +169,7 @@ resource "aws_internet_gateway" "internet-gateway" {
 resource "aws_subnet" "public-subnet-1" {
     vpc_id = aws_vpc.vpc.id
     cidr_block = "${var.public-subnet-1-cidr}"
-    availability_zone = "eu-west-1a"
+    availability_zone = "eu-west-1a" # "${var.availability_zone}"
     map_public_ip_on_launch = true
 
     tags = {
@@ -185,7 +180,7 @@ resource "aws_subnet" "public-subnet-1" {
 # route table
 resource "aws_route_table" "public-route-table" {
     vpc_id = aws_vpc.vpc.id 
-
+    #subnet_id = aws_subnet.public-subnet-1.id
     tags = {
       Name = "eng122_christian_terraform_public_rt"
     }
@@ -195,7 +190,8 @@ resource "aws_route_table" "public-route-table" {
 # routing for route table
 resource "aws_route" "default_route" {
     route_table_id = aws_route_table.public-route-table.id
-    destination_cidr_block = "0.0.0.0/0"
+    #subnet_id = aws_subnet.public-subnet-1.id
+    destination_cidr_block = var.route_destination_cidr
     gateway_id = aws_internet_gateway.internet-gateway.id
 }
 
@@ -204,23 +200,37 @@ resource "aws_route_table_association" "public-subnet-1-route-table-association"
     subnet_id = aws_subnet.public-subnet-1.id
     route_table_id = aws_route_table.public-route-table.id
 }
- ```
 
- #### variable.tf
+# resource "aws_route_table_association" "public-route-table-ig-assocation" {
+#     route_table_id = aws_route_table.public-route-table.id
+#     gateway_id = aws_internet_gateway.internet-gateway.id
+# }
 
- ````
- variable "vpc-cidr" {
-    # cidr block
-    default = "10.0.0.0/16"
-    description = "VPC CIDR block"
-    type = string
-}
+# security group
+resource "aws_security_group" "sec_group_app" {
+  name   = "eng122_christian_terraform_app_sg"
+  vpc_id = aws_vpc.vpc.id
 
-variable "public-subnet-1-cidr" {
-    # public subnet's cidr
-    default = "10.0.4.0/24"
-    description = "public subnet 1 CIDR block"
-    type = string
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 ````
 
